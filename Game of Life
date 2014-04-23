@@ -1,0 +1,204 @@
+
+/*
+  Name: Life.prg
+  Author:  Matías Mangiantini
+  Date: 23/04/14
+  Description: Game of Life made in Harbour.
+  Version: v1.01
+*/
+
+#INCLUDE "Hbgtinfo.ch"
+#INCLUDE "Inkey.ch"
+#DEFINE P_cFil 32
+#DEFINE P_cCol 110
+#DEFINE P_vBorn {3}
+#DEFINE P_vStaysAlive {2,3}
+
+PRIVATE cFil,cCol AS NUMERIC
+PRIVATE nPoblAct AS NUMERIC
+PRIVATE nGeneracion AS NUMERIC
+PRIVATE nVelocidad  AS NUMERIC
+PRIVATE nKey := 0
+PRIVATE vOcupado[P_cFil,P_cCol]
+
+HB_GTINFO(HB_GTI_WINTITLE, "Game of Life")
+SETMODE((P_cFil + 2),P_cCol)
+SET(_SET_EVENTMASK, INKEY_ALL)
+SET CURSOR OFF
+CLEAR
+
+* Armo pantalla inicial.
+INICIALIZAR()
+MOSTRAR_DATOS(nGeneracion,nPoblAct,nVelocidad)
+MOSTRAR_INSTRUCCIONES()
+@ 0,2 SAY "X:"
+@ 0,11 SAY "Y:"
+@ 0,20 SAY "|    Generacion:"
+@ 0,51 SAY "|    Poblacion:"
+@ 0,81 SAY "|    Velocidad:"
+@ 1,0 TO P_cFil,(P_cCol - 1) DOUBLE
+
+WHILE nKey <> K_ESC
+	
+	nKey = INKEY(0)
+	cFil = MRow()
+	cCol = MCol() + 1
+	
+	IF cFil > 1 .AND. cCol > 1 .AND. cFil < P_cFil .AND. cCol < P_cCol
+		
+		@ 0,5 SAY SPACE(3 - LEN(NUMTRIM(cCol - 1))) + NUMTRIM(cCol - 1)
+		@ 0,14 SAY SPACE(2 - LEN(NUMTRIM(cFil - 1))) + NUMTRIM(cFil - 1)
+		
+		IF nKey = K_LBUTTONDOWN
+			IF vOcupado[cFil,cCol] = 0
+				@ cFil,(cCol - 1) SAY "#"
+				vOcupado[cFil,cCol] = 1
+				++nPoblAct
+			ELSE
+				@ cFil,(cCol - 1) SAY " "
+				vOcupado[cFil,cCol] = 0
+				--nPoblAct
+			ENDIF
+		ENDIF
+		
+	ELSE
+	
+		@ 0,5 CLEAR TO 0,10
+		@ 0,14 CLEAR TO 0,18
+		
+	ENDIF
+
+	DO CASE
+		
+		CASE nKey = K_F1
+			
+			ALERT( "Realizado por Matias Mangiantini (Version 1.01)" )
+			
+		CASE nKey = K_F2
+			
+			nKey = 0
+			@ 0,5 CLEAR TO 0,10
+			@ 0,14 CLEAR TO 0,18
+			@ (P_cFil + 1),1 CLEAR TO (P_cFil + 1),(P_cCol - 1)
+			@ (P_cFil + 1),2 SAY "F2: Detener"
+			
+			WHILE nKey <> K_F2
+				
+				++nGeneracion
+				nPoblAct = PROXIMA_GENERACION(vOcupado)
+				MOSTRAR_DATOS(nGeneracion,nPoblAct,nVelocidad)
+				
+				nSeg := SECONDS() + (1 / nVelocidad)
+				WHILE (SECONDS() < nSeg) .AND. ((nKey := INKEY(0.01)) <> K_F2)
+				END
+				
+			END
+			
+			MOSTRAR_INSTRUCCIONES()
+			
+		CASE nKey = K_SPACE
+			
+			nPoblAct = PROXIMA_GENERACION(vOcupado)
+			++nGeneracion
+	
+		CASE nKey = K_DEL
+			
+			INICIALIZAR()
+			@ 2,1 CLEAR TO (P_cFil - 1),(P_cCol - 2)
+			
+		CASE nKey = K_RIGHT
+			
+			IF nVelocidad <= 0.24
+				nVelocidad += 0.01
+			ELSEIF nVelocidad < 1
+				nVelocidad += 0.05
+			ELSEIF nVelocidad < 10
+				nVelocidad += 0.25
+			ELSEIF nVelocidad < 50
+				nVelocidad += 1
+			ENDIF
+			
+		CASE nKey = K_LEFT
+			
+			IF nVelocidad > 10
+				nVelocidad -= 1
+			ELSEIF nVelocidad > 1
+				nVelocidad -= 0.25
+			ELSEIF nVelocidad > 0.25
+				nVelocidad -= 0.05
+			ELSEIF nVelocidad > 0.1
+				nVelocidad -= 0.01
+			ENDIF
+			
+	ENDCASE
+	
+	MOSTRAR_DATOS(nGeneracion,nPoblAct,nVelocidad)
+	
+END
+
+
+
+FUNCTION PROXIMA_GENERACION(pvOcupado)
+	LOCAL cFil,cCol,cCelVec AS NUMERIC	
+	LOCAL nPoblFut := 0
+	LOCAL vOcupadoAux[P_cFil,P_cCol]
+	
+	FOR cFil := 2 TO (P_cFil - 1)
+		FOR cCol := 2 TO (P_cCol - 1)
+			cCelVec = pvOcupado[(cFil - 1),(cCol - 1)] + pvOcupado[(cFil - 1),cCol] + pvOcupado[(cFil - 1),(cCol + 1)]
+			cCelVec += pvOcupado[cFil,(cCol - 1)] + pvOcupado[cFil,(cCol + 1)]
+			cCelVec += pvOcupado[(cFil + 1),(cCol - 1)] + pvOcupado[(cFil + 1),cCol] + pvOcupado[(cFil + 1),(cCol + 1)]
+			IF (pvOcupado[cFil,cCol] = 0 .AND. ASCAN(P_vBorn, cCelVec) <> 0) .OR. (pvOcupado[cFil,cCol] = 1 .AND. ASCAN(P_vStaysAlive, cCelVec) <> 0)
+				@ cFil,(cCol - 1) SAY "#"
+				vOcupadoAux[cFil,cCol] = 1
+				++nPoblFut
+			ELSE
+				@ cFil,(cCol - 1) SAY " "
+				vOcupadoAux[cFil,cCol] = 0
+			ENDIF
+		NEXT
+	NEXT
+	
+	FOR cFil := 2 TO (P_cFil - 1)
+		FOR cCol := 2 TO (P_cCol - 1)
+			pvOcupado[cFil,cCol] = vOcupadoAux[cFil,cCol]
+		NEXT
+	NEXT
+	
+RETURN nPoblFut
+
+
+
+PROCEDURE INICIALIZAR
+	nPoblAct = 0
+	nGeneracion = 0
+	nVelocidad = 10.00
+	FOR cFil := 1 TO P_cFil
+		FOR cCol := 1 TO P_cCol
+			vOcupado[cFil,cCol] = 0
+		NEXT
+	NEXT
+RETURN
+
+
+
+PROCEDURE MOSTRAR_INSTRUCCIONES
+	@ (P_cFil + 1),2 SAY "F2: Avanzar"
+	@ (P_cFil + 1),22 SAY "Supr: Borrar Todo"
+	@ (P_cFil + 1),50 SAY CHR(17) + "/" + CHR(16) + ": Aumentar/Reducir Velocidad"
+	@ (P_cFil + 1),93 SAY "Esc: Salir"
+RETURN
+
+
+
+PROCEDURE MOSTRAR_DATOS(pnGeneracion,pnPoblAct,pnVelocidad)
+	@ 0,37 SAY pnGeneracion
+	@ 0,67 SAY pnPoblAct
+	@ 0,97 SAY SPACE(5 - LEN(NUMTRIM(pnVelocidad))) + NUMTRIM(pnVelocidad)
+RETURN
+
+
+
+FUNCTION NUMTRIM(pnNum)
+	pnNum = LTRIM(STR(pnNum))
+RETURN pnNum
