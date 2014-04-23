@@ -1,4 +1,3 @@
-
 /*
   Name: Life.prg
   Author:  Matías Mangiantini
@@ -11,6 +10,8 @@
 #INCLUDE "Inkey.ch"
 #DEFINE P_cFil 32
 #DEFINE P_cCol 110
+
+* Se pueden modificar para configurar las distintas variantes que existen. Este version es la original: B3/S23.
 #DEFINE P_vBorn {3}
 #DEFINE P_vStaysAlive {2,3}
 
