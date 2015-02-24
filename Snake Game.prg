@@ -145,7 +145,7 @@ CLEAR
 
 
 
-#INCLUDE "MyLib.prg"
+#INCLUDE "MyLib.ch"
 
 // Calculo el lugar donde se generara la cabeza y su forma.
 PROCEDURE PROXIMO_MOVIMIENTO(pxKey)

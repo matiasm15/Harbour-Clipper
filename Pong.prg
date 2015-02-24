@@ -72,7 +72,7 @@ CLEAR
 
 
 
-#INCLUDE "MyLib.prg"
+#INCLUDE "MyLib.ch"
 
 // Armo pantalla inicial.
 FUNCTION INICIAR_PANTALLA(nBolaenX, nBolaenY, nDireccion, nJugador_1, nJugador_2)

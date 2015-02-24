@@ -144,7 +144,7 @@ CLEAR
 
 
 
-#INCLUDE "MyLib.prg"
+#INCLUDE "MyLib.ch"
 
 PROCEDURE PROXIMA_GENERACION(pvOcupado,pnPoblAct,pnGeneracion)
 	LOCAL cFil,cCol,cCelVec AS NUMERIC
