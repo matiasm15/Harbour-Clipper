@@ -1,9 +1,10 @@
+
 /*
   Name: Life.prg
-  Author:  Matías Mangiantini
-  Date: 23/04/14
+  Author: Matías Mangiantini
+  Date: 11/05/14
   Description: Game of Life made in Harbour.
-  Version: v1.01
+  Version: v1.02
 */
 
 #INCLUDE "Hbgtinfo.ch"
@@ -11,15 +12,15 @@
 #DEFINE P_cFil 32
 #DEFINE P_cCol 110
 
-* Se pueden modificar para configurar las distintas variantes que existen. Esta versión es la original: B3/S23.
+// Se pueden modificar para configurar las distintas variantes que existen. Esta versión es la original: B3/S23.
 #DEFINE P_vBorn {3}
 #DEFINE P_vStaysAlive {2,3}
 
 PRIVATE cFil,cCol AS NUMERIC
 PRIVATE nPoblAct AS NUMERIC
 PRIVATE nGeneracion AS NUMERIC
-PRIVATE nVelocidad  AS NUMERIC
 PRIVATE nKey := 0
+PRIVATE nVelocidad := 10.00
 PRIVATE vOcupado[P_cFil,P_cCol]
 
 HB_GTINFO(HB_GTI_WINTITLE, "Game of Life")
@@ -28,15 +29,18 @@ SET(_SET_EVENTMASK, INKEY_ALL)
 SET CURSOR OFF
 CLEAR
 
-* Armo pantalla inicial.
-INICIALIZAR()
-MOSTRAR_DATOS(nGeneracion,nPoblAct,nVelocidad)
-MOSTRAR_INSTRUCCIONES()
+// Armo pantalla inicial.
+INICIALIZAR(@vOcupado,@nPoblAct,@nGeneracion)
+MOSTRAR_VELOCIDAD(nVelocidad)
 @ 0,2 SAY "X:"
 @ 0,11 SAY "Y:"
 @ 0,20 SAY "|    Generacion:"
+@ 0,37 SAY nGeneracion
 @ 0,51 SAY "|    Poblacion:"
+@ 0,67 SAY nPoblAct
 @ 0,81 SAY "|    Velocidad:"
+MOSTRAR_VELOCIDAD(nVelocidad)
+
 @ 1,0 TO P_cFil,(P_cCol - 1) DOUBLE
 
 WHILE nKey <> K_ESC
@@ -73,7 +77,7 @@ WHILE nKey <> K_ESC
 		
 		CASE nKey = K_F1
 			
-			ALERT( "Realizado por Matias Mangiantini (Version 1.01)" )
+			ALERT( "Realizado por Matias Mangiantini (Version 1.02)" )
 			
 		CASE nKey = K_F2
 			
@@ -85,11 +89,9 @@ WHILE nKey <> K_ESC
 			
 			WHILE nKey <> K_F2
 				
-				++nGeneracion
-				nPoblAct = PROXIMA_GENERACION(vOcupado)
-				MOSTRAR_DATOS(nGeneracion,nPoblAct,nVelocidad)
+				PROXIMA_GENERACION(vOcupado,@nPoblAct,@nGeneracion)
 				
-				nSeg := SECONDS() + (1 / nVelocidad)
+				nSeg = SECONDS() + (1 / nVelocidad)
 				WHILE (SECONDS() < nSeg) .AND. ((nKey := INKEY(0.01)) <> K_F2)
 				END
 				
@@ -99,12 +101,11 @@ WHILE nKey <> K_ESC
 			
 		CASE nKey = K_SPACE
 			
-			nPoblAct = PROXIMA_GENERACION(vOcupado)
-			++nGeneracion
+			PROXIMA_GENERACION(vOcupado,@nPoblAct,@nGeneracion)
 	
 		CASE nKey = K_DEL
 			
-			INICIALIZAR()
+			INICIALIZAR(@vOcupado,@nPoblAct,@nGeneracion)
 			@ 2,1 CLEAR TO (P_cFil - 1),(P_cCol - 2)
 			
 		CASE nKey = K_RIGHT
@@ -118,6 +119,7 @@ WHILE nKey <> K_ESC
 			ELSEIF nVelocidad < 50
 				nVelocidad += 1
 			ENDIF
+			MOSTRAR_VELOCIDAD(nVelocidad)
 			
 		CASE nKey = K_LEFT
 			
@@ -130,54 +132,59 @@ WHILE nKey <> K_ESC
 			ELSEIF nVelocidad > 0.1
 				nVelocidad -= 0.01
 			ENDIF
+			MOSTRAR_VELOCIDAD(nVelocidad)
 			
 	ENDCASE
 	
-	MOSTRAR_DATOS(nGeneracion,nPoblAct,nVelocidad)
+	@ 0,37 SAY nGeneracion
+	@ 0,67 SAY nPoblAct
 	
 END
+CLEAR
 
 
 
-FUNCTION PROXIMA_GENERACION(pvOcupado)
-	LOCAL cFil,cCol,cCelVec AS NUMERIC	
-	LOCAL nPoblFut := 0
+#INCLUDE "MyLib.prg"
+
+PROCEDURE PROXIMA_GENERACION(pvOcupado,pnPoblAct,pnGeneracion)
+	LOCAL cFil,cCol,cCelVec AS NUMERIC
 	LOCAL vOcupadoAux[P_cFil,P_cCol]
-	
+
+	pnPoblAct = 0
+	++pnGeneracion
 	FOR cFil := 2 TO (P_cFil - 1)
 		FOR cCol := 2 TO (P_cCol - 1)
-			cCelVec = pvOcupado[(cFil - 1),(cCol - 1)] + pvOcupado[(cFil - 1),cCol] + pvOcupado[(cFil - 1),(cCol + 1)]
-			cCelVec += pvOcupado[cFil,(cCol - 1)] + pvOcupado[cFil,(cCol + 1)]
-			cCelVec += pvOcupado[(cFil + 1),(cCol - 1)] + pvOcupado[(cFil + 1),cCol] + pvOcupado[(cFil + 1),(cCol + 1)]
+
+			cCelVec = pvOcupado[(cFil - 1),(cCol - 1)] + pvOcupado[(cFil - 1),cCol] + pvOcupado[(cFil - 1),(cCol + 1)] + pvOcupado[cFil,(cCol - 1)] + pvOcupado[cFil,(cCol + 1)] + pvOcupado[(cFil + 1),(cCol - 1)] + pvOcupado[(cFil + 1),cCol] + pvOcupado[(cFil + 1),(cCol + 1)]
+
 			IF (pvOcupado[cFil,cCol] = 0 .AND. ASCAN(P_vBorn, cCelVec) <> 0) .OR. (pvOcupado[cFil,cCol] = 1 .AND. ASCAN(P_vStaysAlive, cCelVec) <> 0)
 				@ cFil,(cCol - 1) SAY "#"
 				vOcupadoAux[cFil,cCol] = 1
-				++nPoblFut
+				++pnPoblAct
 			ELSE
 				@ cFil,(cCol - 1) SAY " "
 				vOcupadoAux[cFil,cCol] = 0
 			ENDIF
 		NEXT
 	NEXT
-	
+
 	FOR cFil := 2 TO (P_cFil - 1)
-		FOR cCol := 2 TO (P_cCol - 1)
-			pvOcupado[cFil,cCol] = vOcupadoAux[cFil,cCol]
-		NEXT
+		ACOPY(vOcupadoAux[cFil], pvOcupado[cFil], 2, (P_cCol - 2), 2)
 	NEXT
 	
-RETURN nPoblFut
+	@ 0,37 SAY pnGeneracion
+	@ 0,67 SAY pnPoblAct
+	
+RETURN
 
 
 
-PROCEDURE INICIALIZAR
-	nPoblAct = 0
-	nGeneracion = 0
-	nVelocidad = 10.00
+PROCEDURE INICIALIZAR(pvOcupado,pnPoblAct,pnGeneracion)
+	LOCAL cFil AS NUMERIC
+	pnPoblAct = 0
+	pnGeneracion = 0
 	FOR cFil := 1 TO P_cFil
-		FOR cCol := 1 TO P_cCol
-			vOcupado[cFil,cCol] = 0
-		NEXT
+		AFILL(pvOcupado[cFil], 0)
 	NEXT
 RETURN
 
@@ -192,14 +199,6 @@ RETURN
 
 
 
-PROCEDURE MOSTRAR_DATOS(pnGeneracion,pnPoblAct,pnVelocidad)
-	@ 0,37 SAY pnGeneracion
-	@ 0,67 SAY pnPoblAct
-	@ 0,97 SAY SPACE(5 - LEN(NUMTRIM(pnVelocidad))) + NUMTRIM(pnVelocidad)
+PROCEDURE MOSTRAR_VELOCIDAD(pnVelocidad)
+	@ 0,97 SAY SPACE(5 - LEN( LTRIM( STR( pnVelocidad ) ) ) ) + LTRIM( STR( pnVelocidad ) )
 RETURN
-
-
-
-FUNCTION NUMTRIM(pnNum)
-	pnNum = LTRIM(STR(pnNum))
-RETURN pnNum

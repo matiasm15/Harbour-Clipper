@@ -40,10 +40,10 @@ WHILE .T.
 	nSeg = SECONDS() + P_nVel
 	WHILE (nSeg > SECONDS())
 		nLastKey = xKey
-		IF (ASCAN(vMovimientoJugador_1, xKey) <> 0)
-			MOVER_PALETA(xKey, @nJugador_1, 2, nBolaenX)
-		ELSEIF (ASCAN(vMovimientoJugador_2, xKey) <> 0)
-			MOVER_PALETA(xKey, @nJugador_2, 86, nBolaenX)
+		IF (ASCAN(vMovimientoJugador_1, nLastKey) <> 0)
+			MOVER_PALETA(nLastKey, @nJugador_1, 2, nBolaenX)
+		ELSEIF (ASCAN(vMovimientoJugador_2, nLastKey) <> 0)
+			MOVER_PALETA(nLastKey, @nJugador_2, 86, nBolaenX)
 		ENDIF
 		xKey = INKEY(P_nVel)
 	END
@@ -72,7 +72,9 @@ CLEAR
 
 
 
-* Armo pantalla inicial.
+#INCLUDE "MyLib.prg"
+
+// Armo pantalla inicial.
 FUNCTION INICIAR_PANTALLA(nBolaenX, nBolaenY, nDireccion, nJugador_1, nJugador_2)
 	LOCAL xKey AS NUMERIC
 	LOCAL cElem AS NUMERIC
@@ -185,7 +187,7 @@ PROCEDURE MOVER_BOLA(nBolaenX, nBolaenY, nDireccion, nJugador_1, nJugador_2, nLa
 		
 		IF ((nBolaenXSig = 2) .AND. (nBolaenYSig >= nJugador_1) .AND. (nJugador_1 + 2 >= nBolaenYSig)) .OR. ((nBolaenXSig = 86) .AND. (nBolaenYSig >= nJugador_2) .AND. (nJugador_2 + 2 >= nBolaenYSig))
 		
-			* Veo si la pelota debe tomar algun efecto.
+			// Compruebo si la pelota debe tomar algun efecto.
 			IF (3 > nDireccion) .AND. (ASCAN(vEfectoJugador_1, nLastKey) <> 0)
 				nDireccion = ASCAN(vEfectoJugador_1, nLastKey) - 1
 			ELSEIF (nDireccion > 2) .AND. (ASCAN(vEfectoJugador_2, nLastKey) <> 0)

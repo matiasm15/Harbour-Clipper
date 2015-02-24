@@ -33,7 +33,7 @@ SETMODE(31,90)
 SET CURSOR OFF
 CLEAR
 
-* Armo pantalla inicial.
+// Armo pantalla inicial.
 @ 0,1 SAY "Puntuacion:"
 @ 0,13 SAY nPun
 @ 1,0 TO 30,89 DOUBLE
@@ -42,7 +42,7 @@ FOR cElem := 1 TO (cLong - 1)
 NEXT
 @ vSnake[cElem,1],vSnake[cElem,2] SAY CHR(185) COLOR "G"
 
-* Espero hasta que el usuario presione RIGHT, DOWN o F2.
+// Espero hasta que el usuario presione RIGHT, DOWN o F2.
 WHILE xKey <> K_RIGHT .AND. xKey <> K_DOWN
 	xKey = INKEY(0)
 	IF xKey = K_F1
@@ -56,12 +56,12 @@ xKeyAnt = xKey
 
 WHILE .T.
 	
-	* Borro la cola de la serpiente. Guardo su posición para mostrarla por si el jugador pierde.
+	// Borro la cola de la serpiente. Guardo su posición para mostrarla por si el jugador pierde.
 	@ vSnake[nElem,1],vSnake[nElem,2] SAY " "
 	vSnake[cLong + 1] = vSnake[nElem]
 	vSnake[nElem] = {-1,-1}
 	
-	* Verifico si se hace algun movimiento prohibido.
+	// Verifico si se hace algun movimiento prohibido.
 	IF ASCAN(vKey,xKey) = 0 .OR. (xKeyAnt = K_RIGHT .AND. xKey = K_LEFT) .OR. (xKeyAnt = K_LEFT .AND. xKey = K_RIGHT) .OR. (xKeyAnt = K_UP .AND. xKey = K_DOWN) .OR. (xKeyAnt = K_DOWN .AND. xKey = K_UP)
 		xKey = xKeyAnt
 	ELSE
@@ -70,15 +70,15 @@ WHILE .T.
 	
 	PROXIMO_MOVIMIENTO(xKey)
 	
-	* Verifico la nueva posición. Si ya esta ocupada, el jugador pierde.
-	IF VERIFICAR_POSICION(nCabeza,vSnake,cLong) = .T.
+	// Verifico la nueva posición. Si ya esta ocupada, el jugador pierde.
+	IF POSICION_VALIDA(nCabeza,vSnake,cLong)
 		
 		vSnake[nElem,1] = nCabeza[1]
 		vSnake[nElem,2] = nCabeza[2]
 		
 	ELSE
 		
-		* Ilumino el cuerpo y la cabeza.
+		// Ilumino el cuerpo y la cabeza.
 		FOR cElem := 1 TO (cLong + 1)
 			@ vSnake[cElem,1],vSnake[cElem,2] SAY "#" COLOR "G+"
 		NEXT
@@ -88,9 +88,9 @@ WHILE .T.
 		
 	ENDIF
 	
-	* Si la serpiente come el fruto le agrego el nuevo trozo y actualizo el puntaje.
+	// Si la serpiente come el fruto le agrego el nuevo trozo y actualizo el puntaje.
 	IF vSnake[nElem,1] = nFruto[1] .AND. vSnake[nElem,2] = nFruto[2]
-		AADD(vSnake,{-1,-1})
+		AADD(vSnake, {-1,-1})
 		++cLong
 		vSnake[cLong] = {-1,-1}
 		bFruto = .T.
@@ -98,21 +98,21 @@ WHILE .T.
 		@ 0,13 SAY nPun
 	ENDIF
 	
-	* Muestro la cabeza.
+	// Muestro la cabeza.
 	@ vSnake[nElem,1],vSnake[nElem,2] SAY CHR(nSimb) COLOR "G"
 	@ vSnake[nElemAnt,1],vSnake[nElemAnt,2] SAY "#" COLOR "G"
 	nElemAnt = nElem
 	nElem %= cLong
 	++nElem
 	
-	* Si la serpiente agarró el fruto genero uno nuevo.
+	// Si la serpiente agarró el fruto genero uno nuevo.
 	WHILE bFruto = .T.
 		
 		nFruto = { RANDOM(2,29), RANDOM(1,88) }
 		
-		IF VERIFICAR_POSICION(nFruto,vSnake,cLong) = .T.
+		IF POSICION_VALIDA(nFruto,vSnake,cLong)
 			
-			* Calculo si tiene puntaje extra.
+			// Calculo si tiene puntaje extra.
 			bFruto = .F.
 			nAux = RANDOM(1,50)
 			IF nAux = 6
@@ -133,7 +133,7 @@ WHILE .T.
 		ENDIF
 	END
 	
-	* Verifico si el modo automático esta activado.
+	// Verifico si el modo automático esta activado.
 	IF bManual = .T.
 		xKey = INKEY(P_nVel)
 	ELSE
@@ -145,7 +145,9 @@ CLEAR
 
 
 
-* Calculo el lugar donde se generara la cabeza y su forma.
+#INCLUDE "MyLib.prg"
+
+// Calculo el lugar donde se generara la cabeza y su forma.
 PROCEDURE PROXIMO_MOVIMIENTO(pxKey)
 	nCabeza[1] = vSnake[nElemAnt,1]
 	nCabeza[2] = vSnake[nElemAnt,2]
@@ -166,8 +168,8 @@ PROCEDURE PROXIMO_MOVIMIENTO(pxKey)
 RETURN
 
 
-* Verifico si la posición no esta ya ocupada por la serpiente o por los bordes.
-FUNCTION VERIFICAR_POSICION(pnPosicion,pvSnake,pcLong)
+// Verifico si la posición no esta ya ocupada por la serpiente o por los bordes.
+FUNCTION POSICION_VALIDA(pnPosicion,pvSnake,pcLong)
 	LOCAL cElem AS NUMERIC
 	LOCAL bRes := .T.
 	IF pnPosicion[1] = 1 .OR. pnPosicion[1] = 30 .OR. pnPosicion[2] = 0 .OR. pnPosicion[2] = 89
@@ -190,7 +192,7 @@ FUNCTION MODO_AUTOMATICO
 	LOCAL nAux := RANDOM(1,2)
 	INKEY(0.01)
 	
-	* Intenta como primera opción moverse horizontalmente de acuerdo a la posición del fruto.
+	// Intenta como primera opción moverse horizontalmente de acuerdo a la posición del fruto.
 	IF nFruto[2] > nCabeza[2]
 		nResp = K_RIGHT
 	ELSEIF nFruto[2] < nCabeza[2]
@@ -203,12 +205,12 @@ FUNCTION MODO_AUTOMATICO
 	
 	FOR cPas := 1 TO 4
 		
-		* Verifico cada opción y si hace un movimiento ilegal.
+		// Verifico cada opción y si hace un movimiento ilegal.
 		PROXIMO_MOVIMIENTO(nResp)
-		IF (VERIFICAR_POSICION(nCabeza,vSnake,cLong) = .T.) .AND. (xKeyAnt <> K_RIGHT .OR. nResp <> K_LEFT) .AND. (xKeyAnt <> K_LEFT .OR. nResp <> K_RIGHT) .AND. (xKeyAnt <> K_UP .OR. nResp <> K_DOWN) .AND. (xKeyAnt <> K_DOWN .OR. nResp <> K_UP)
+		IF POSICION_VALIDA(nCabeza,vSnake,cLong) .AND. (xKeyAnt <> K_RIGHT .OR. nResp <> K_LEFT) .AND. (xKeyAnt <> K_LEFT .OR. nResp <> K_RIGHT) .AND. (xKeyAnt <> K_UP .OR. nResp <> K_DOWN) .AND. (xKeyAnt <> K_DOWN .OR. nResp <> K_UP)
 			EXIT
 			
-		* Intenta como segunda opción moverse verticalmente de acuerdo a la posición del fruto.
+		// Intenta como segunda opción moverse verticalmente de acuerdo a la posición del fruto.
 		ELSEIF cPas = 1
 			IF nFruto[1] > nCabeza[1]
 				nResp = K_DOWN
@@ -220,11 +222,11 @@ FUNCTION MODO_AUTOMATICO
 				nResp = K_LEFT
 			ENDIF
 			
-		* Intenta como tercera opción seguir el rumbo que tenia.
+		// Intenta como tercera opción seguir el rumbo que tenia.
 		ELSEIF cPas = 2
 			nResp = xKeyAnt
 			
-		* Por último intenta doblar de manera aleatoria.
+		// Por último intenta doblar de manera aleatoria.
 		ELSE
 			DO CASE
 				CASE (xKeyAnt = K_RIGHT .OR. xKeyAnt = K_LEFT) .AND. nAux = 1
@@ -242,23 +244,3 @@ FUNCTION MODO_AUTOMATICO
 	NEXT
 	
 RETURN nResp
-
-
-
-FUNCTION RANDOM(pnMin, pnMax)
-	LOCAL nRes AS NUMERIC
-	LOCAL nDif := pnMax - pnMin + 1
-	STATIC nSeed := 0.123456789
-	IF nSeed = 0.123456789
-		nSeed += VAL(SUBSTR(TIME(),7,2)) / 100
-	ENDIF
-	nSeed = (nSeed * 31415821 + 1) / 1000000
-	nSeed -= INT(nSeed)
-	nRes = INT(nSeed * nDif + pnMin)
-RETURN nRes
-
-
-
-FUNCTION NUMTRIM(pnNum)
-	pnNum = LTRIM(STR(INT(pnNum)))
-RETURN pnNum
